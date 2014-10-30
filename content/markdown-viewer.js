@@ -74,28 +74,35 @@ extensions.markdown = {};
     }
 
     this.createPreview = function(view, orient) {
+        // Watch for editor changes, to update the markdown view.
         if (markdown_browser_count == 0) {
             markdown_browser_count += 1;
-            // Watch for editor changes, to update the markdown view.
             log.debug("adding event listeners for 'editor_text_modified' and 'view_closed'");
             window.addEventListener("editor_text_modified", this.handlers.onmodified);
             window.addEventListener("view_closed", this.handlers.onviewclosed);
         }
-        // Create a temporary file.
+
+        // Create a temporary file to start the preview with.
         var koFileEx = Services.koFileSvc.makeTempFile(".html", "w");
         koFileEx.puts(markdown.toHTML(view.scimoz.text));
         koFileEx.close();
         view.createInternalViewPreview(koFileEx.URI, view.alternateViewList);
+
+        // Change orient if necessary.
         if (orient && ko.views.manager.topView.getAttribute("orient") != orient) {
             ko.views.manager.topView.changeOrient();
         }
+
+        // Store settings.
         var settings = this.getSettings(view);
         settings.file = koFileEx;
         settings.browserview = view.preview;
         settings.browserview._extension_markdown = { "backRef": view };
         settings.browserview.setAttribute("sub-type", "markdown");
         view.preview = null;
-        return settings.browserview;
+
+        // Change the tab label:
+        settings.browserview.title = "Markdown - " + view.title;
     }
 
     this.updatePreview = function(view) {
@@ -112,7 +119,9 @@ extensions.markdown = {};
             this.handlers.onviewchanged = this.onviewchanged.bind(this);
             this.handlers.onviewclosed = this.onviewclosed.bind(this);
             this.handlers.onmodified = this.onmodified.bind(this);
+            this.handlers.onkomodoshutdown = this.onkomodoshutdown.bind(this);
 
+            ko.main.addWillCloseHandler(this.handlers.onkomodoshutdown);
             window.addEventListener("current_view_changed", this.handlers.onviewchanged);
 
             // Register a preview command.
@@ -128,6 +137,13 @@ extensions.markdown = {};
         } catch (ex) {
             log.exception(ex);
         }
+    }
+
+    this.onkomodoshutdown = function() {
+        // Remove all event handlers.
+        window.removeEventListener("current_view_changed", this.handlers.onviewchanged);
+        window.removeEventListener("view_closed", this.handlers.onviewclosed);
+        window.removeEventListener("editor_text_modified", this.handlers.onmodified);
     }
 
     this.onviewresize = function(event) {
