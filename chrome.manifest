@@ -1,0 +1,2 @@
+content markdown-viewer jar:markdown-viewer.jar!/content/locale markdown-viewer en-US jar:markdown-viewer.jar!/locale/en-US/
+overlay chrome://komodo/content/komodo.xul chrome://markdown-viewer/content/overlay.xul

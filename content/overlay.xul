@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE overlay SYSTEM "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+<overlay id="markdown_viewer_overlay" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+    <script src="chrome://markdown-viewer/content/markdown.js" />
+    <script src="chrome://markdown-viewer/content/markdown-viewer.js" />
+
+    <popupset id="extensionPopupSet">
+        <panel id="extension_markdown_panel"
+               noautofocus="true"
+               noautohide="true"
+               level="floating">
+            <vbox>
+                <hbox>
+                    <button id="extension_markdown_button"
+                            type="menu-button"
+                            label="Preview"
+                            oncommand="extensions.markdown.onpreview(event);">
+                        <menupopup>
+                            <menuitem label="Under-over split view"
+                                      type="radio"
+                                      name="extension_markdown_radio_splitview"
+                                      oncommand="extensions.markdown.onpreview(event, 'vertical');" />
+                            <menuitem label="Side-by-side split view"
+                                      type="radio"
+                                      name="extension_markdown_radio_splitview"
+                                      oncommand="extensions.markdown.onpreview(event, 'horizontal');" />
+                        </menupopup>
+                    </button>
+                </hbox>
+            </vbox>
+        </panel>
+    </popupset>
+</overlay>
