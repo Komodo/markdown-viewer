@@ -93,6 +93,7 @@ extensions.markdown = {};
         settings.file = koFileEx;
         settings.browserview = view.preview;
         settings.browserview._extension_markdown = { "backRef": view };
+        settings.browserview.setAttribute("sub-type", "markdown");
         view.preview = null;
         return settings.browserview;
     }

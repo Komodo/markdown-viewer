@@ -2,6 +2,8 @@
 
 <!DOCTYPE overlay SYSTEM "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
+<?xml-stylesheet href="chrome://markdown-viewer/skin/markdown-viewer.css" type="text/css"?>
+
 <overlay id="markdown_viewer_overlay" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
     <script src="chrome://markdown-viewer/content/markdown.js" />
     <script src="chrome://markdown-viewer/content/markdown-viewer.js" />
