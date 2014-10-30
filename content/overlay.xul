@@ -9,9 +9,12 @@
     <script src="chrome://markdown-viewer/content/markdown-viewer.js" />
 
     <popupset id="extensionPopupSet">
+        <!-- The type="drag" attribute is set to stop the popup from stealing the focus. -->
         <panel id="extension_markdown_panel"
+               type="drag"
                noautofocus="true"
                noautohide="true"
+               ignorekeys="true"
                level="floating">
             <vbox>
                 <hbox>
