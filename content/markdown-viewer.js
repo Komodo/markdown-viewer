@@ -5,7 +5,7 @@ extensions.markdown = {};
 
 (function() {
     var log = require("ko/logging").getLogger("extensions.markdown");
-    log.setLevel(log.DEBUG);
+    //log.setLevel(log.DEBUG);
 
     // A reference to the current markdown browser view.
     var markdown_view = null;
