@@ -10,17 +10,6 @@ extensions.markdown = {};
     // A reference to the current markdown browser view.
     var markdown_view = null;
 
-    // Creating the UI.
-    function createXULElement(tagName, attributes) {
-        var elem = document.createElement(tagName);
-        if (attributes) {
-            for (var attr of Object.keys(attributes)) {
-                elem.setAttribute(attr, attributes[attr]);
-            }
-        }
-        return elem;
-    }
-
     function getXPosition(panel, editor) {
         var x = editor.boxObject.width;
         // The || case when the panel doesn't have a size - we'll guess and
