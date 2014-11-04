@@ -7,8 +7,8 @@ extensions.markdown = {};
     var log = require("ko/logging").getLogger("extensions.markdown");
     log.setLevel(log.DEBUG);
 
-    // Keep track of how many markdown files we are previewing.
-    var markdown_browser_count = 0;
+    // A reference to the current markdown browser view.
+    var markdown_view = null;
 
     // Creating the UI.
     function createXULElement(tagName, attributes) {
@@ -67,7 +67,7 @@ extensions.markdown = {};
     this.getSettings = function(view) {
         if (!("_extension_markdown" in view)) {
             view._extension_markdown = {
-                "browserview": null,
+                "previewing": false,  // currently previewing
             };
         }
         return view._extension_markdown;
@@ -75,12 +75,9 @@ extensions.markdown = {};
 
     this.createPreview = function(view, orient) {
         // Watch for editor changes, to update the markdown view.
-        if (markdown_browser_count == 0) {
-            markdown_browser_count += 1;
-            log.debug("adding event listeners for 'editor_text_modified' and 'view_closed'");
-            window.addEventListener("editor_text_modified", this.handlers.onmodified);
-            window.addEventListener("view_closed", this.handlers.onviewclosed);
-        }
+        log.debug("adding event listeners for 'editor_text_modified' and 'view_closed'");
+        window.addEventListener("editor_text_modified", this.handlers.onmodified);
+        window.addEventListener("view_closed", this.handlers.onviewclosed);
 
         // Create a temporary file to start the preview with.
         var koFileEx = Services.koFileSvc.makeTempFile(".html", "w");
@@ -94,20 +91,39 @@ extensions.markdown = {};
         }
 
         // Store settings.
+        markdown_view = view.preview;
+        markdown_view._extension_markdown = { "backRef": view };
+        markdown_view.setAttribute("sub-type", "markdown");
         var settings = this.getSettings(view);
         settings.file = koFileEx;
-        settings.browserview = view.preview;
-        settings.browserview._extension_markdown = { "backRef": view };
-        settings.browserview.setAttribute("sub-type", "markdown");
+        settings.previewing = true;
         view.preview = null;
 
         // Change the tab label:
-        settings.browserview.title = "Markdown - " + view.title;
+        markdown_view.title = "Markdown - " + view.title;
     }
 
     this.updatePreview = function(view) {
-        var body = view._extension_markdown.browserview.browser.contentDocument.body;
+        var body = markdown_view.browser.contentDocument.body;
         body.innerHTML = markdown.toHTML(view.scimoz.text);
+    }
+
+    this.closeMarkdownView = function(deleteSettings=false, closeView=true) {
+        this.hidePopup();
+        // Closing the markdown browser preview and remove event listeners.
+        if (markdown_view) {
+            log.debug("removing event listeners for 'editor_text_modified' and 'view_closed'");
+            window.removeEventListener("editor_text_modified", this.handlers.onmodified);
+            window.removeEventListener("view_closed", this.handlers.onviewclosed);
+            if (deleteSettings) {
+                delete markdown_view._extension_markdown;
+            }
+            if (closeView && markdown_view.close) {
+                log.debug("closing markdown browser preview");
+                markdown_view.close();
+            }
+            markdown_view = null;
+        }
     }
 
     /** Event Listeners **/
@@ -165,7 +181,7 @@ extensions.markdown = {};
                 return;  // Ignore non-editor views.
             }
             var settings = this.getSettings(view);
-            if (!settings.browserview) {
+            if (!settings.previewing) {
                 this.createPreview(view, orient);
             } else {
                 this.updatePreview(view);
@@ -178,17 +194,31 @@ extensions.markdown = {};
     this.onviewchanged = function(event) {
         try {
             var view = event && event.originalTarget || ko.views.manager.currentView;
-            if (!view || view.getAttribute("type") != "editor" || view.language != "Markdown") {
-                this.hidePopup();
+            if (!view) {
+                this.closeMarkdownView();
                 return;
             }
-            log.debug("onviewchanged: it's a Markdown file!");
+            var viewtype = view.getAttribute("type");
+            if (viewtype == "browser" && view.getAttribute("sub-type") == "markdown") {
+                // Just switching to the markdown view - that's fine.
+                log.debug("onviewchanged: switched to the markdown preview - ignoring");
+                return;
+            }
+            if (viewtype != "editor" || view.language != "Markdown") {
+                this.closeMarkdownView();
+                return;
+            }
             // Create an object to hold our markdown state information.
             var settings = this.getSettings(view);
-            if (!settings.browserview) {
-                this.openPopup(view);
+            if (!settings.previewing) {
+                log.debug("onviewchanged: it's a markdown file with no preview");
+                this.closeMarkdownView();
+                extensions.markdown.openPopup(view);
+            } else if (!markdown_view) {
+                log.debug("onviewchanged: re-display the markdown preview");
+                this.createPreview(view);
             } else {
-                this.hidePopup();
+                log.debug("onviewchanged: already showing the markdown view");
             }
         } catch (ex) {
             log.exception(ex);
@@ -202,21 +232,14 @@ extensions.markdown = {};
             if ("_extension_markdown" in view) {
                 if (view._extension_markdown.backRef) {
                     log.debug("onviewclosed - closed markdown browser preview");
-                    // Closing the browser preview.
-                    markdown_browser_count -= 1;
-                    if (markdown_browser_count == 0) {
-                        // Remove event listeners.
-                        log.debug("removing event listeners for 'editor_text_modified' and 'view_closed'");
-                        window.removeEventListener("editor_text_modified", this.handlers.onmodified);
-                        window.removeEventListener("view_closed", this.handlers.onviewclosed);
-                    }
+                    this.closeMarkdownView(true /* delete the settings */, false /* don't close it again */);
                     delete view._extension_markdown.backRef._extension_markdown;
-                } else if (view._extension_markdown.browserview) {
-                    log.debug("onviewclosed - closed markdown editor view which has a preview");
+                } else if (view._extension_markdown.isPreviewing) {
+                    log.debug("onviewclosed - closed editor view which has a markdown preview");
                     // Closing the markdown editor file - close the browser view
                     // - it's useless without the accompanying file.
                     // Requires a setTimeout, otherwise errors will ensue.
-                    setTimeout(view._extension_markdown.browserview.close.bind(view._extension_markdown.browserview), 1);
+                    setTimeout(this.closeMarkdownView.bind(this));
                 }
                 delete view._extension_markdown;
             }
@@ -229,7 +252,7 @@ extensions.markdown = {};
         try {
             log.debug("onmodified: event");
             var view = event.data.view;
-            if (!("_extension_markdown" in view) || !view._extension_markdown.browserview) {
+            if (!("_extension_markdown" in view) || !view._extension_markdown.previewing) {
                 return;
             }
             log.debug("onmodified: it's a Markdown file!");
