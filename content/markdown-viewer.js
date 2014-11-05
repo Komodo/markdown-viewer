@@ -122,12 +122,14 @@ extensions.markdown = {};
             this.handlers = {};
             // Store references to bound functions, so can add/remove them.
             this.handlers.onviewchanged = this.onviewchanged.bind(this);
+            this.handlers.onviewlistclosed = this.onviewlistclosed.bind(this);
             this.handlers.onviewclosed = this.onviewclosed.bind(this);
             this.handlers.onmodified = this.onmodified.bind(this);
             this.handlers.onkomodoshutdown = this.onkomodoshutdown.bind(this);
 
             ko.main.addWillCloseHandler(this.handlers.onkomodoshutdown);
             window.addEventListener("current_view_changed", this.handlers.onviewchanged);
+            window.addEventListener("view_list_closed", this.handlers.onviewlistclosed);
 
             // Register a preview command.
             if (typeof(require) == "function") {
@@ -147,6 +149,7 @@ extensions.markdown = {};
     this.onkomodoshutdown = function() {
         // Remove all event handlers.
         window.removeEventListener("current_view_changed", this.handlers.onviewchanged);
+        window.removeEventListener("view_list_closed", this.handlers.onviewlistclosed);
         window.removeEventListener("view_closed", this.handlers.onviewclosed);
         window.removeEventListener("editor_text_modified", this.handlers.onmodified);
     }
@@ -221,9 +224,10 @@ extensions.markdown = {};
             if ("_extension_markdown" in view) {
                 if (view._extension_markdown.backRef) {
                     log.debug("onviewclosed - closed markdown browser preview");
+                    var fileSettings = this.getSettings(view._extension_markdown.backRef);
+                    fileSettings.previewing = false;
                     this.closeMarkdownView(true /* delete the settings */, false /* don't close it again */);
-                    delete view._extension_markdown.backRef._extension_markdown;
-                } else if (view._extension_markdown.isPreviewing) {
+                } else if (view._extension_markdown.previewing) {
                     log.debug("onviewclosed - closed editor view which has a markdown preview");
                     // Closing the markdown editor file - close the browser view
                     // - it's useless without the accompanying file.
@@ -232,6 +236,14 @@ extensions.markdown = {};
                 }
                 delete view._extension_markdown;
             }
+        } catch (ex) {
+            log.exception(ex);
+        }
+    }
+
+    this.onviewlistclosed = function(event) {
+        try {
+            this.closeMarkdownView();
         } catch (ex) {
             log.exception(ex);
         }
