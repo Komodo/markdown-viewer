@@ -10,6 +10,10 @@
 
 Drag and drop the [markdown.xpi](releases/markdown-viewer-0.2-ko.xpi?raw=true]) file onto a running Komodo instance.
 
+# Screenshot
+
+![Screenshot](https://github.com/Komodo/markdown-viewer/raw/master/screenshots/markdown-viewer.png)
+
 # License
 
 - Mozilla Public License (MPL)
