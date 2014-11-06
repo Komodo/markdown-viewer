@@ -5,6 +5,7 @@
 - Preview button appears in the top-right corner of the editor whenever a Markdown file is open
 - Allows side-by-side, or under-over previewing inside of Komodo
 - Dynamically updates the markdown preview as you edit (live editing)
+- Automatically closes the preview when switching to another file, re-opens when switching back
 
 # Installation
 
