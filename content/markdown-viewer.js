@@ -4,8 +4,15 @@ if (!("extensions" in window)) {
 extensions.markdown = {};
 
 (function() {
-    var log = require("ko/logging").getLogger("extensions.markdown");
-    //log.setLevel(log.DEBUG);
+    if (typeof(require) == "function") {
+        // Komodo 9 or above.
+        var log = require("ko/logging").getLogger("extensions.markdown");
+        log.setLevel(log.DEBUG);
+    } else {
+        // Komodo 8 or earlier.
+        var log = ko.logging.getLogger("extensions.markdown");
+        log.setLevel(ko.logging.DEBUG);
+    }
 
     // A reference to the current markdown browser view.
     var markdown_view = null;
@@ -21,6 +28,10 @@ extensions.markdown = {};
         log.debug("openPopup");
         if (!this.panel) {
             this.panel = document.getElementById("extension_markdown_panel");
+            // Komodo 9 and above will set the type to "drag".
+            if (typeof(require) == "function") {
+                this.panel.setAttribute("type", "drag");
+            }
         }
 
         if (!view) {
@@ -69,7 +80,9 @@ extensions.markdown = {};
         window.addEventListener("view_closed", this.handlers.onviewclosed);
 
         // Create a temporary file to start the preview with.
-        var koFileEx = Services.koFileSvc.makeTempFile(".html", "w");
+        var koFileSvc = Components.classes["@activestate.com/koFileService;1"].
+                            getService(Components.interfaces.koIFileService);
+        var koFileEx = koFileSvc.makeTempFile(".html", "w");
         koFileEx.puts(markdown.toHTML(view.scimoz.text));
         koFileEx.close();
         view.createInternalViewPreview(koFileEx.URI, view.alternateViewList);
@@ -131,7 +144,7 @@ extensions.markdown = {};
             window.addEventListener("current_view_changed", this.handlers.onviewchanged);
             window.addEventListener("view_list_closed", this.handlers.onviewlistclosed);
 
-            // Register a preview command.
+            // Register a preview command - Komodo 9 or above.
             if (typeof(require) == "function") {
                 const commands  = require("ko/commands");
                 commands.register("markdown-preview", this.onpreview.bind(this),

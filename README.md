@@ -8,7 +8,7 @@
 
 # Installation
 
-Drag and drop the [markdown.xpi](releases/markdown-viewer-0.1-ko.xpi?raw=true]) file onto a running Komodo instance.
+Drag and drop the [markdown.xpi](releases/markdown-viewer-0.2-ko.xpi?raw=true]) file onto a running Komodo instance.
 
 # License
 
