@@ -79,13 +79,7 @@ extensions.markdown = {};
         window.addEventListener("editor_text_modified", this.handlers.onmodified);
         window.addEventListener("view_closed", this.handlers.onviewclosed);
 
-        // Create a temporary file to start the preview with.
-        var koFileSvc = Components.classes["@activestate.com/koFileService;1"].
-                            getService(Components.interfaces.koIFileService);
-        var koFileEx = koFileSvc.makeTempFile(".html", "w");
-        koFileEx.puts(markdown.toHTML(view.scimoz.text));
-        koFileEx.close();
-        view.createInternalViewPreview(koFileEx.URI, view.alternateViewList);
+        view.createInternalViewPreview("chrome://markdown-viewer/content/template.html", view.alternateViewList);
 
         // Change orient if necessary.
         if (orient && ko.views.manager.topView.getAttribute("orient") != orient) {
@@ -97,17 +91,25 @@ extensions.markdown = {};
         markdown_view._extension_markdown = { "backRef": view };
         markdown_view.setAttribute("sub-type", "markdown");
         var settings = this.getSettings(view);
-        settings.file = koFileEx;
         settings.previewing = true;
         view.preview = null;
 
         // Change the tab label:
         markdown_view.title = "Markdown - " + view.title;
+
+        this.updatePreview(view);
     }
 
     this.updatePreview = function(view) {
-        var body = markdown_view.browser.contentDocument.body;
-        body.innerHTML = markdown.toHTML(view.scimoz.text);
+        var doc = markdown_view.browser.contentDocument;
+        log.debug(doc.readyState);
+
+        if (doc.readyState != 'complete') {
+            return setTimeout(this.updatePreview.bind(this, view), 50);
+        }
+
+        var wrap = markdown_view.browser.contentDocument.getElementById("wrap");
+        wrap.innerHTML = markdown.toHTML(view.scimoz.text);
     }
 
     this.closeMarkdownView = function(deleteSettings=false, closeView=true) {
