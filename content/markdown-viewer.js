@@ -102,14 +102,20 @@ extensions.markdown = {};
 
     this.updatePreview = function(view) {
         var doc = markdown_view.browser.contentDocument;
-        log.debug(doc.readyState);
 
         if (doc.readyState != 'complete') {
             return setTimeout(this.updatePreview.bind(this, view), 50);
         }
 
+        // Work around issue with markdown lib not recognizing ``` code
+        var text = view.scimoz.text;
+        text = text.replace(/```([\s\S]+?)```/g, function(match, contents, offset, s)
+        {
+            return "	" + contents.trim().split("\n").join("\n	");
+        });
+
         var wrap = markdown_view.browser.contentDocument.getElementById("wrap");
-        wrap.innerHTML = markdown.toHTML(view.scimoz.text);
+        wrap.innerHTML = markdown.toHTML(text);
     }
 
     this.closeMarkdownView = function(deleteSettings=false, closeView=true) {
