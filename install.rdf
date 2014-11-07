@@ -4,7 +4,7 @@
   <Description about="urn:mozilla:install-manifest">
     <em:id>markdown-viewer@activestate.com</em:id>
     <em:name>Markdown Preview</em:name>
-    <em:version>0.2</em:version>
+    <em:version>0.3</em:version>
     <em:description>Markdown previewer for Komodo</em:description>
     <em:creator>Todd Whiteman</em:creator>
     <em:homepageURL></em:homepageURL>

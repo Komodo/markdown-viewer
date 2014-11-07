@@ -6,10 +6,13 @@
 - Allows side-by-side, or under-over previewing inside of Komodo
 - Dynamically updates the markdown preview as you edit (live editing)
 - Automatically closes the preview when switching to another file, re-opens when switching back
+- Uses GitHub flavoured CSS styling
+- Styles code blocks
 
 # Installation
 
-Drag and drop the [markdown.xpi](releases/markdown-viewer-0.2-ko.xpi?raw=true]) file onto a running Komodo instance.
+Download the [markdown.xpi](releases/markdown-viewer-0.3-ko.xpi?raw=true]) file
+and then drag/drop that xpi file onto a running Komodo instance.
 
 # Screenshot
 
@@ -21,4 +24,6 @@ Drag and drop the [markdown.xpi](releases/markdown-viewer-0.2-ko.xpi?raw=true]) 
 
 # Acknowledgements
 
-- Uses the [markdown-js](https://github.com/evilstreak/markdown-js) library (MIT license) to covert Markdown to HTML.
+- [marked](https://github.com/chjj/marked) library to covert Markdown to HTML
+- [github-markdown-css](https://github.com/sindresorhus/github-markdown-css) for the GitHub flavoured CSS styling
+- [highlight](https://github.com/isagalaev/highlight.js) for code block highlighting

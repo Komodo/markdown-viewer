@@ -101,21 +101,39 @@ extensions.markdown = {};
     }
 
     this.updatePreview = function(view) {
-        var doc = markdown_view.browser.contentDocument;
+        var mdocument = markdown_view.browser.contentDocument;
 
-        if (doc.readyState != 'complete') {
+        // Wait till the browser is loaded.
+        if (mdocument.readyState != 'complete') {
             return setTimeout(this.updatePreview.bind(this, view), 50);
         }
 
-        // Work around issue with markdown lib not recognizing ``` code
-        var text = view.scimoz.text;
-        text = text.replace(/```([\s\S]+?)```/g, function(match, contents, offset, s)
-        {
-            return "	" + contents.trim().split("\n").join("\n	");
-        });
+        var mwindow = mdocument.ownerGlobal;
 
-        var wrap = markdown_view.browser.contentDocument.getElementById("wrap");
-        wrap.innerHTML = markdown.toHTML(text);
+        // Set markdown options.
+        //if (!mwindow.setMarkedOptions) {
+        //    mwindow.setMarkedOptions = true;
+        //    // TODO: Could be exposed as user preferences.
+        //    mwindow.marked.setOptions({
+        //        renderer: new mwindow.marked.Renderer(),
+        //        gfm: true,
+        //        tables: true,
+        //        breaks: false,
+        //        pedantic: false,
+        //        sanitize: true,
+        //        smartLists: true,
+        //        smartypants: false,
+        //    });
+        //}
+
+        // Generate and load markdown html into the browser view.
+        var mwrap = mdocument.getElementById("wrap");
+        var text = view.scimoz.text;
+        mwrap.innerHTML = mwindow.marked(text);
+
+        // Highlight the code sections.
+        var blocks = mdocument.querySelectorAll('pre code');
+        Array.prototype.forEach.call(blocks, mwindow.hljs.highlightBlock);
     }
 
     this.closeMarkdownView = function(deleteSettings=false, closeView=true) {
