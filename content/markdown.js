@@ -994,9 +994,9 @@ Markdown.dialects.Gruber.inline = {
     "`": function inlineCode( text ) {
       // Inline code block. as many backticks as you like to start it
       // Always skip over the opening ticks.
-      var m = text.match( /(`+)(([\s\S]*?)\1)/ );
+      var m = text.match( /(`)(([^\n]*?)\1)/ );
 
-      if ( m && m[2] )
+      if ( m && m[2] && m[2].length && m[2].search(/^`+$/) == -1 )
         return [ m[1].length + m[2].length, [ "inlinecode", m[3] ] ];
       else {
         // TODO: No matching end code found - warn!
