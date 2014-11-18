@@ -1,4 +1,4 @@
-[Komodo](http://www.activestate.com/komodo) extension allowing a live preview for Markdown files inside of Komodo.
+[Komodo](http://www.komodoide.com/) extension allowing a live preview for Markdown files inside of Komodo.
 
 # Features
 
