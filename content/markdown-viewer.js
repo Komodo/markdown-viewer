@@ -7,11 +7,11 @@ extensions.markdown = {};
     if (typeof(require) == "function") {
         // Komodo 9 or above.
         var log = require("ko/logging").getLogger("extensions.markdown");
-        log.setLevel(log.DEBUG);
+        //log.setLevel(log.DEBUG);
     } else {
         // Komodo 8 or earlier.
         var log = ko.logging.getLogger("extensions.markdown");
-        log.setLevel(ko.logging.DEBUG);
+        //log.setLevel(ko.logging.DEBUG);
     }
 
     // A reference to the current markdown browser view.
