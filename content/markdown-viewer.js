@@ -16,6 +16,10 @@ extensions.markdown = {};
 
     // A reference to the current markdown browser view.
     var markdown_view = null;
+    var updatepreview_timeout_id = null;
+
+    // The onmodified update delay (in milliseconds).
+    this.UPDATE_DELAY = 500;
 
     function getXPosition(panel, editor) {
         var x = editor.boxObject.width;
@@ -101,6 +105,7 @@ extensions.markdown = {};
     }
 
     this.updatePreview = function(view) {
+        updatepreview_timeout_id = null;
         var mdocument = markdown_view.browser.contentDocument;
 
         // Wait till the browser is loaded.
@@ -290,13 +295,17 @@ extensions.markdown = {};
 
     this.onmodified = function(event) {
         try {
+            if (updatepreview_timeout_id) {
+                // Existing timeout, just leave it.
+                return;
+            }
             log.debug("onmodified: event");
             var view = event.data.view;
             if (!("_extension_markdown" in view) || !view._extension_markdown.previewing) {
                 return;
             }
             log.debug("onmodified: it's a Markdown file!");
-            this.updatePreview(view);
+            updatepreview_timeout_id = setTimeout(this.updatePreview.bind(this, view), this.UPDATE_DELAY);
         } catch (ex) {
             log.exception(ex);
         }
