@@ -15,28 +15,26 @@
                ignorekeys="true"
                level="parent">
             <vbox>
-                <vbox>
-                    <button id="extension_markdown_button"
-                            type="menu-button"
-                            label="Preview"
-                            oncommand="extensions.markdown.onpreview(event);">
-                        <menupopup>
-                            <menuitem label="Under-over split view"
-                                      type="radio"
-                                      name="extension_markdown_radio_splitview"
-                                      oncommand="extensions.markdown.onpreview(event, 'vertical');" />
-                            <menuitem label="Side-by-side split view"
-                                      type="radio"
-                                      name="extension_markdown_radio_splitview"
-                                      oncommand="extensions.markdown.onpreview(event, 'horizontal');" />
-                        </menupopup>
-                    </button>
-                    <button id="extension_markdown_export_button"
-                            type="button"
-                            label="To HTML"
-                            oncommand="extensions.markdown.onpreview(event, null, true);">
-                    </button>
-                </vbox>
+                <button id="extension_markdown_button"
+                        type="menu-button"
+                        label="Preview"
+                        oncommand="extensions.markdown.onpreview(event);">
+                    <menupopup>
+                        <menuitem label="Under-over split view"
+                                  type="radio"
+                                  name="extension_markdown_radio_splitview"
+                                  oncommand="extensions.markdown.onpreview(event, 'vertical');" />
+                        <menuitem label="Side-by-side split view"
+                                  type="radio"
+                                  name="extension_markdown_radio_splitview"
+                                  oncommand="extensions.markdown.onpreview(event, 'horizontal');" />
+                    </menupopup>
+                </button>
+                <button id="extension_markdown_export_button"
+                        type="button"
+                        label="To HTML"
+                        oncommand="extensions.markdown.onexport(event);">
+                </button>
             </vbox>
         </panel>
     </popupset>

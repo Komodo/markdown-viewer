@@ -114,7 +114,7 @@ extensions.markdown = {};
         return view._extension_markdown;
     }
 
-    this.createPreview = function(view, orient, xport) {
+    this.createPreview = function(view, orient) {
         // Watch for editor changes, to update the markdown view.
         log.debug("adding event listeners for 'editor_text_modified' and 'view_closed'");
         window.addEventListener("editor_text_modified", this.handlers.onmodified);
@@ -134,16 +134,16 @@ extensions.markdown = {};
         var settings = this.getSettings(view);
         settings.previewing = true;
         view.preview = null;
-        this.updatePreview(view, xport);
+        this.updatePreview(view);
     }
 
-    this.updatePreview = function(view, xport) {
+    this.updatePreview = function(view) {
         updatepreview_timeout_id = null;
         var mdocument = markdown_view.browser.contentDocument;
 
         // Wait till the browser is loaded.
         if (mdocument.readyState != 'complete') {
-            updatepreview_timeout_id = setTimeout(this.updatePreview.bind(this, view, xport), 50);
+            updatepreview_timeout_id = setTimeout(this.updatePreview.bind(this, view), 50);
         }
         
         // Change the tab label.
@@ -175,8 +175,9 @@ extensions.markdown = {};
         // Highlight the code sections.
         var blocks = mdocument.querySelectorAll('code[class^=lang-]');
         Array.prototype.forEach.call(blocks, mwindow.hljs.highlightBlock);
-        // Export rendered view if applicable.
-        if (xport) exportDocument(mdocument, view.title);
+        // Allow post-rendering actions.
+        var markdown_preview_rendered = new Event('markdown_preview_rendered');
+        window.dispatchEvent(markdown_preview_rendered);
     }
 
     this.closeMarkdownView = function(deleteSettings=false, closeView=true) {
@@ -246,7 +247,7 @@ extensions.markdown = {};
         }
     }
 
-    this.onpreview = function(event, orient, xport) {
+    this.onpreview = function(event, orient) {
         try {
             log.debug("onpreview");
             var view = ko.views.manager.currentView;
@@ -256,13 +257,23 @@ extensions.markdown = {};
             }
             var settings = this.getSettings(view);
             if (!settings.previewing) {
-                this.createPreview(view, orient, xport);
+                this.createPreview(view, orient);
             } else {
-                this.updatePreview(view, xport);
+                this.updatePreview(view);
             }
         } catch (ex) {
             log.exception(ex);
         }
+    }
+    
+    this.onexport = function(event) {
+        this.onpreview();
+        var doExport = function() {
+            var mdocument = markdown_view.browser.contentDocument;
+            exportDocument(mdocument, markdown_view.title);
+            window.removeEventListener('markdown_preview_rendered', doExport, false);
+        };
+        window.addEventListener('markdown_preview_rendered', doExport, false);
     }
 
     this.onviewchanged = function(event) {
