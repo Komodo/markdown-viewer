@@ -99,10 +99,6 @@ extensions.markdown = {};
         var settings = this.getSettings(view);
         settings.previewing = true;
         view.preview = null;
-
-        // Change the tab label:
-        markdown_view.title = "Markdown - " + view.title;
-
         this.updatePreview(view);
     }
 
@@ -112,8 +108,11 @@ extensions.markdown = {};
 
         // Wait till the browser is loaded.
         if (mdocument.readyState != 'complete') {
-            return setTimeout(this.updatePreview.bind(this, view), 50);
+            updatepreview_timeout_id = setTimeout(this.updatePreview.bind(this, view), 50);
         }
+        
+        // Change the tab label.
+        mdocument.title = view.title + ' (preview)';
 
         var mwindow = mdocument.ownerGlobal;
 
