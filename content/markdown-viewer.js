@@ -27,6 +27,41 @@ extensions.markdown = {};
         // we'll recalculate it after the panel is shown.
         return x - (panel.boxObject.width || 120) - 2;
     }
+    
+    /**
+     * Creates new HTML file with preview document
+     * @param {Document} document
+     * @param {string} leaf name
+     */
+    function exportDocument(document, name) {
+        var n = name + '.html',
+            v = ko.views.manager._doNewView('HTML5', null), // is there a better way?
+            d = v.koDoc,            
+            s = document.styleSheets,
+            EOL = ["\r\n", "\n", "\r"][v.scimoz.eOLMode],
+            sa, si, ra, ri, rules = [];
+        for (var si = 0; si < s.length; si++)
+            if (s[si])
+                for (var ri = 0; ri < s[si].cssRules.length; ri++)
+                    rules.push(s[si].cssRules[ri].cssText);
+        d.buffer = [
+            '<!DOCTYPE html>',
+            '<html>',
+            '<head>',
+            '<meta charset="utf=8">',
+            '<title>' + name + '</title>',
+            '<style>',
+            rules.join(EOL),
+            '</style>',
+            '</head>',
+            '<body>',
+            document.body.innerHTML.replace(/\r?\n/g, EOL).trim(),
+            '</body>',
+            '</html>'
+        ].join(EOL);            
+        d.baseName = n;
+        v.updateLeafName();
+    }
 
     this.openPopup = function(view) {
         log.debug("openPopup");
@@ -79,7 +114,7 @@ extensions.markdown = {};
         return view._extension_markdown;
     }
 
-    this.createPreview = function(view, orient) {
+    this.createPreview = function(view, orient, xport) {
         // Watch for editor changes, to update the markdown view.
         log.debug("adding event listeners for 'editor_text_modified' and 'view_closed'");
         window.addEventListener("editor_text_modified", this.handlers.onmodified);
@@ -99,16 +134,16 @@ extensions.markdown = {};
         var settings = this.getSettings(view);
         settings.previewing = true;
         view.preview = null;
-        this.updatePreview(view);
+        this.updatePreview(view, xport);
     }
 
-    this.updatePreview = function(view) {
+    this.updatePreview = function(view, xport) {
         updatepreview_timeout_id = null;
         var mdocument = markdown_view.browser.contentDocument;
 
         // Wait till the browser is loaded.
         if (mdocument.readyState != 'complete') {
-            updatepreview_timeout_id = setTimeout(this.updatePreview.bind(this, view), 50);
+            updatepreview_timeout_id = setTimeout(this.updatePreview.bind(this, view, xport), 50);
         }
         
         // Change the tab label.
@@ -140,6 +175,8 @@ extensions.markdown = {};
         // Highlight the code sections.
         var blocks = mdocument.querySelectorAll('code[class^=lang-]');
         Array.prototype.forEach.call(blocks, mwindow.hljs.highlightBlock);
+        // Export rendered view if applicable.
+        if (xport) exportDocument(mdocument, view.title);
     }
 
     this.closeMarkdownView = function(deleteSettings=false, closeView=true) {
@@ -209,7 +246,7 @@ extensions.markdown = {};
         }
     }
 
-    this.onpreview = function(event, orient) {
+    this.onpreview = function(event, orient, xport) {
         try {
             log.debug("onpreview");
             var view = ko.views.manager.currentView;
@@ -219,9 +256,9 @@ extensions.markdown = {};
             }
             var settings = this.getSettings(view);
             if (!settings.previewing) {
-                this.createPreview(view, orient);
+                this.createPreview(view, orient, xport);
             } else {
-                this.updatePreview(view);
+                this.updatePreview(view, xport);
             }
         } catch (ex) {
             log.exception(ex);

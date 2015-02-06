@@ -15,7 +15,7 @@
                ignorekeys="true"
                level="parent">
             <vbox>
-                <hbox>
+                <vbox>
                     <button id="extension_markdown_button"
                             type="menu-button"
                             label="Preview"
@@ -31,7 +31,12 @@
                                       oncommand="extensions.markdown.onpreview(event, 'horizontal');" />
                         </menupopup>
                     </button>
-                </hbox>
+                    <button id="extension_markdown_export_button"
+                            type="button"
+                            label="To HTML"
+                            oncommand="extensions.markdown.onpreview(event, null, true);">
+                    </button>
+                </vbox>
             </vbox>
         </panel>
     </popupset>
