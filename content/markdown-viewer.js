@@ -43,7 +43,9 @@ extensions.markdown = {};
         }
         var editor = view.scintilla;
         var x = getXPosition(this.panel, editor);
-        this.panel.openPopup(editor, null, x, 0);
+        var editorBox = editor.boxObject;
+        this.panel.openPopup(editor, null, editorBox.screenX + x, editorBox.screenY);
+        this.panel.moveTo(editorBox.screenX + x, editorBox.screenY);
     }
 
     this.hidePopup = function() {
@@ -183,7 +185,7 @@ extensions.markdown = {};
             }
 
             // TODO: Need a way to detect that a view has been resized!
-            //window.addEventListener("resize", this.onviewresize.bind(this));
+            window.addEventListener("resize", this.onviewresize.bind(this));
             this.onviewchanged();
         } catch (ex) {
             log.exception(ex);

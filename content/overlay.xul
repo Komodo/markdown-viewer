@@ -13,7 +13,7 @@
                noautofocus="true"
                noautohide="true"
                ignorekeys="true"
-               level="floating">
+               level="parent">
             <vbox>
                 <hbox>
                     <button id="extension_markdown_button"
