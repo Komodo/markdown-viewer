@@ -117,20 +117,20 @@ extensions.markdown = {};
         var mwindow = mdocument.ownerGlobal;
 
         // Set markdown options.
-        //if (!mwindow.setMarkedOptions) {
-        //    mwindow.setMarkedOptions = true;
-        //    // TODO: Could be exposed as user preferences.
-        //    mwindow.marked.setOptions({
-        //        renderer: new mwindow.marked.Renderer(),
-        //        gfm: true,
-        //        tables: true,
-        //        breaks: false,
-        //        pedantic: false,
-        //        sanitize: true,
-        //        smartLists: true,
-        //        smartypants: false,
-        //    });
-        //}
+        if (!mwindow.setMarkedOptions) {
+            mwindow.setMarkedOptions = true;
+            // TODO: Could be exposed as user preferences.
+            mwindow.marked.setOptions({
+                renderer: new mwindow.marked.Renderer(),
+                gfm: true,
+                tables: true,
+                breaks: false,
+                pedantic: true,
+                sanitize: false,
+                smartLists: true,
+                smartypants: false,
+            });
+        }
 
         // Generate and load markdown html into the browser view.
         var mwrap = mdocument.getElementById("wrap");
