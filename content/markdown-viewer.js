@@ -138,7 +138,7 @@ extensions.markdown = {};
         mwrap.innerHTML = mwindow.marked(text);
 
         // Highlight the code sections.
-        var blocks = mdocument.querySelectorAll('pre code');
+        var blocks = mdocument.querySelectorAll('code[class^=lang-]');
         Array.prototype.forEach.call(blocks, mwindow.hljs.highlightBlock);
     }
 
