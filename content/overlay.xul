@@ -31,9 +31,19 @@
                     </menupopup>
                 </button>
                 <button id="extension_markdown_export_button"
-                        type="button"
+                        type="menu-button"
                         label="To HTML"
                         oncommand="extensions.markdown.onexport(event);">
+                    <menupopup>
+                        <menuitem label="As a new editor file"
+                                  type="radio"
+                                  name="extension_markdown_radio_export"
+                                  oncommand="extensions.markdown.onexport(event, 'file');" />
+                        <menuitem label="To clipboard"
+                                  type="radio"
+                                  name="extension_markdown_radio_export"
+                                  oncommand="extensions.markdown.onexport(event, 'clipboard');" />
+                    </menupopup>
                 </button>
             </vbox>
         </panel>

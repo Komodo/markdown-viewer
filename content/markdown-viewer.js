@@ -17,6 +17,8 @@ extensions.markdown = {};
     // A reference to the current markdown browser view.
     var markdown_view = null;
     var updatepreview_timeout_id = null;
+    
+    var exportTarget = 'clipboard';
 
     // The onmodified update delay (in milliseconds).
     this.UPDATE_DELAY = 500;
@@ -29,22 +31,18 @@ extensions.markdown = {};
     }
     
     /**
-     * Creates new HTML file with preview document
+     * Exports DOM document with styles to HTML text
      * @param {Document} document
-     * @param {string} leaf name
+     * @param {string} name (document title)
      */
     function exportDocument(document, name) {
-        var n = name + '.html',
-            v = ko.views.manager._doNewView('HTML5', null), // is there a better way?
-            d = v.koDoc,            
-            s = document.styleSheets,
-            EOL = ["\r\n", "\n", "\r"][v.scimoz.eOLMode],
-            sa, si, ra, ri, rules = [];
+        var s = document.styleSheets,
+            sa, si, ra, ri, rules = [], EOL = "\r\n";
         for (var si = 0; si < s.length; si++)
             if (s[si])
                 for (var ri = 0; ri < s[si].cssRules.length; ri++)
                     rules.push(s[si].cssRules[ri].cssText);
-        d.buffer = [
+        return [
             '<!DOCTYPE html>',
             '<html>',
             '<head>',
@@ -58,11 +56,35 @@ extensions.markdown = {};
             document.body.innerHTML.replace(/\r?\n/g, EOL).trim(),
             '</body>',
             '</html>'
-        ].join(EOL);            
+        ].join(EOL);
+    }
+
+    /**
+     * Creates new HTML5 editor file with specified content
+     * @param {string} html
+     * @param {stromg} name (leaf name)
+     */
+    function createHTMLFile(html, name) {
+        var n = name + '.html',
+            v = ko.views.manager._doNewView('HTML5', null),
+            d = v.koDoc;            
+        d.buffer = html;            
         d.baseName = n;
         v.updateLeafName();
     }
-
+    
+    /**
+     * Copies specified HTML to clipboard
+     * to be pasted as HTML text into plain text editors
+     * and as HTML object into WYSIWYG editors
+     * @param {string} html
+     */
+    function copyToClipboard(html) {
+        var plain = xtk.clipboard.addTextDataFlavor('text/unicode', html),
+            thtml = xtk.clipboard.addTextDataFlavor('text/html', html, plain);
+        xtk.clipboard.copyFromTransferable(thtml);
+    }
+    
     this.openPopup = function(view) {
         log.debug("openPopup");
         if (!this.panel) {
@@ -266,16 +288,35 @@ extensions.markdown = {};
         }
     }
     
-    this.onexport = function(event) {
+    this.onexport = function(event, target) {
+        if (!target) target = exportTarget;
+        exportTarget = target;
         this.onpreview();
         var doExport = function() {
-            var mdocument = markdown_view.browser.contentDocument;
-            exportDocument(mdocument, markdown_view.title);
             window.removeEventListener('markdown_preview_rendered', doExport, false);
+            var mdocument = markdown_view.browser.contentDocument,
+                name = markdown_view.title,
+                html = exportDocument(mdocument, name);
+            markdown_view.close();
+            switch (target) {
+                case 'file':
+                    createHTMLFile(html, name);
+                    break;
+                case 'clipboard':
+                    copyToClipboard(html);
+                    ko.notifications.add(
+                        'Markdown as HTML is copied to clipboard.',
+                        ['markdown'],
+                        'markdown-viewer',
+                        { severity: Components.interfaces.koINotification.SEVERITY_INFO }
+                    );
+                    break;
+            }
         };
         window.addEventListener('markdown_preview_rendered', doExport, false);
+        event.stopPropagation();
     }
-
+        
     this.onviewchanged = function(event) {
         try {
             var view = event && event.originalTarget || ko.views.manager.currentView;
