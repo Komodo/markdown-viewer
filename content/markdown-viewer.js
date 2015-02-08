@@ -33,15 +33,18 @@ extensions.markdown = {};
     /**
      * Exports DOM document with styles to HTML text
      * @param {Document} document
-     * @param {string} name (document title)
+     * @param {string} name (document title to set)
      */
     function exportDocument(document, name) {
-        var s = document.styleSheets,
-            sa, si, ra, ri, rules = [], EOL = "\r\n";
-        for (var si = 0; si < s.length; si++)
-            if (s[si])
-                for (var ri = 0; ri < s[si].cssRules.length; ri++)
-                    rules.push(s[si].cssRules[ri].cssText);
+        var styleSheets = document.styleSheets,
+            styleSheetIndex,
+            ruleIndex,
+            rules = [],
+            EOL = "\r\n";
+        for (styleSheetIndex = 0; styleSheetIndex < styleSheets.length; styleSheetIndex++)
+            if (styleSheets[styleSheetIndex])
+                for (ruleIndex = 0; ruleIndex < styleSheets[styleSheetIndex].cssRules.length; ruleIndex++)
+                    rules.push(styleSheets[styleSheetIndex].cssRules[ruleIndex].cssText);
         return [
             '<!DOCTYPE html>',
             '<html>',
@@ -65,12 +68,12 @@ extensions.markdown = {};
      * @param {stromg} name (leaf name)
      */
     function createHTMLFile(html, name) {
-        var n = name + '.html',
-            v = ko.views.manager._doNewView('HTML5', null),
-            d = v.koDoc;            
-        d.buffer = html;            
-        d.baseName = n;
-        v.updateLeafName();
+        var leafName = name + '.html',
+            view = ko.views.manager._doNewView('HTML5', null),
+            document = view.koDoc;            
+        document.buffer = html;
+        document.baseName = leafName;
+        view.updateLeafName();
     }
     
     /**
@@ -80,8 +83,8 @@ extensions.markdown = {};
      * @param {string} html
      */
     function copyToClipboard(html) {
-        var plain = xtk.clipboard.addTextDataFlavor('text/unicode', html),
-            thtml = xtk.clipboard.addTextDataFlavor('text/html', html, plain);
+        var plain = xtk.clipboard.addTextDataFlavor('text/unicode', html), // plain transferable
+            thtml = xtk.clipboard.addTextDataFlavor('text/html', html, plain); // HTML transferable
         xtk.clipboard.copyFromTransferable(thtml);
     }
     
@@ -172,6 +175,7 @@ extensions.markdown = {};
         mdocument.title = view.title + ' (preview)';
 
         var mwindow = mdocument.ownerGlobal;
+        if (!mwindow.marked) return;
 
         // Set markdown options.
         if (!mwindow.setMarkedOptions) {
@@ -260,12 +264,14 @@ extensions.markdown = {};
     }
 
     this.onviewresize = function(event) {
-        try {
-            if (this.panel.state == "open") {
-                this.repositionPopup();
+        if (typeof this.panel !== 'undefined') {
+            try {
+                if (this.panel.state == "open") {
+                    this.repositionPopup();
+                }
+            } catch (ex) {
+                log.exception(ex);
             }
-        } catch (ex) {
-            log.exception(ex);
         }
     }
 
@@ -288,9 +294,14 @@ extensions.markdown = {};
         }
     }
     
+    /**
+     * Export button and menu items handler
+     * @param {Event} event
+     * @param {string} target ("file"|"clipboard"), if not set default or last used value will be used
+     */
     this.onexport = function(event, target) {
         if (!target) target = exportTarget;
-        exportTarget = target;
+        exportTarget = target; // module global for rememberng last choice
         this.onpreview();
         var doExport = function() {
             window.removeEventListener('markdown_preview_rendered', doExport, false);
