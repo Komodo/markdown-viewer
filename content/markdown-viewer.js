@@ -169,13 +169,13 @@ extensions.markdown = {};
         // Wait till the browser is loaded.
         if (mdocument.readyState != 'complete') {
             updatepreview_timeout_id = setTimeout(this.updatePreview.bind(this, view), 50);
+            return;
         }
         
         // Change the tab label.
         mdocument.title = view.title + ' (preview)';
 
         var mwindow = mdocument.ownerGlobal;
-        if (!mwindow.marked) return;
 
         // Set markdown options.
         if (!mwindow.setMarkedOptions) {
@@ -247,7 +247,6 @@ extensions.markdown = {};
                                   { label: "Markdown: Generate markdown preview" });
             }
 
-            // TODO: Need a way to detect that a view has been resized!
             window.addEventListener("resize", this.onviewresize.bind(this));
             this.onviewchanged();
         } catch (ex) {
