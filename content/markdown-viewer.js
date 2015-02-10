@@ -17,6 +17,8 @@ extensions.markdown = {};
     // A reference to the current markdown browser view.
     var markdown_view = null;
     var updatepreview_timeout_id = null;
+    
+    var exportTarget = 'clipboard';
 
     // The onmodified update delay (in milliseconds).
     this.UPDATE_DELAY = 500;
@@ -27,7 +29,65 @@ extensions.markdown = {};
         // we'll recalculate it after the panel is shown.
         return x - (panel.boxObject.width || 120) - 2;
     }
+    
+    /**
+     * Exports DOM document with styles to HTML text
+     * @param {Document} document
+     * @param {string} name (document title to set)
+     */
+    function exportDocument(document, name) {
+        var styleSheets = document.styleSheets,
+            styleSheetIndex,
+            ruleIndex,
+            rules = [],
+            EOL = "\r\n";
+        for (styleSheetIndex = 0; styleSheetIndex < styleSheets.length; styleSheetIndex++)
+            if (styleSheets[styleSheetIndex])
+                for (ruleIndex = 0; ruleIndex < styleSheets[styleSheetIndex].cssRules.length; ruleIndex++)
+                    rules.push(styleSheets[styleSheetIndex].cssRules[ruleIndex].cssText);
+        return [
+            '<!DOCTYPE html>',
+            '<html>',
+            '<head>',
+            '<meta charset="utf=8">',
+            '<title>' + name + '</title>',
+            '<style>',
+            rules.join(EOL),
+            '</style>',
+            '</head>',
+            '<body>',
+            document.body.innerHTML.replace(/\r?\n/g, EOL).trim(),
+            '</body>',
+            '</html>'
+        ].join(EOL);
+    }
 
+    /**
+     * Creates new HTML5 editor file with specified content
+     * @param {string} html
+     * @param {stromg} name (leaf name)
+     */
+    function createHTMLFile(html, name) {
+        var leafName = name + '.html',
+            view = ko.views.manager._doNewView('HTML5', null),
+            document = view.koDoc;            
+        document.buffer = html;
+        document.baseName = leafName;
+        view.updateLeafName();
+    }
+    
+    /**
+     * Copies specified HTML to clipboard
+     * to be pasted as HTML text into plain text editors
+     * and as HTML object into WYSIWYG editors
+     * @param {string} html
+     */
+    function copyToClipboard(html) {
+        var plain = xtk.clipboard.addTextDataFlavor('text/unicode', html), // plain transferable
+            thtml = xtk.clipboard.addTextDataFlavor('text/html', html, plain); // HTML transferable
+        xtk.clipboard.copyFromTransferable(thtml);
+    }
+    
     this.openPopup = function(view) {
         log.debug("openPopup");
         if (!this.panel) {
@@ -43,7 +103,9 @@ extensions.markdown = {};
         }
         var editor = view.scintilla;
         var x = getXPosition(this.panel, editor);
-        this.panel.openPopup(editor, null, x, 0);
+        var editorBox = editor.boxObject;
+        this.panel.openPopup(editor, null, editorBox.screenX + x, editorBox.screenY);
+        this.panel.moveTo(editorBox.screenX + x, editorBox.screenY);
     }
 
     this.hidePopup = function() {
@@ -97,10 +159,6 @@ extensions.markdown = {};
         var settings = this.getSettings(view);
         settings.previewing = true;
         view.preview = null;
-
-        // Change the tab label:
-        markdown_view.title = "Markdown - " + view.title;
-
         this.updatePreview(view);
     }
 
@@ -110,26 +168,30 @@ extensions.markdown = {};
 
         // Wait till the browser is loaded.
         if (mdocument.readyState != 'complete') {
-            return setTimeout(this.updatePreview.bind(this, view), 50);
+            updatepreview_timeout_id = setTimeout(this.updatePreview.bind(this, view), 50);
+            return;
         }
+        
+        // Change the tab label.
+        mdocument.title = view.title + ' (preview)';
 
         var mwindow = mdocument.ownerGlobal;
 
         // Set markdown options.
-        //if (!mwindow.setMarkedOptions) {
-        //    mwindow.setMarkedOptions = true;
-        //    // TODO: Could be exposed as user preferences.
-        //    mwindow.marked.setOptions({
-        //        renderer: new mwindow.marked.Renderer(),
-        //        gfm: true,
-        //        tables: true,
-        //        breaks: false,
-        //        pedantic: false,
-        //        sanitize: true,
-        //        smartLists: true,
-        //        smartypants: false,
-        //    });
-        //}
+        if (!mwindow.setMarkedOptions) {
+            mwindow.setMarkedOptions = true;
+            // TODO: Could be exposed as user preferences.
+            mwindow.marked.setOptions({
+                renderer: new mwindow.marked.Renderer(),
+                gfm: true,
+                tables: true,
+                breaks: false,
+                pedantic: true,
+                sanitize: false,
+                smartLists: true,
+                smartypants: false,
+            });
+        }
 
         // Generate and load markdown html into the browser view.
         var mwrap = mdocument.getElementById("wrap");
@@ -137,8 +199,11 @@ extensions.markdown = {};
         mwrap.innerHTML = mwindow.marked(text);
 
         // Highlight the code sections.
-        var blocks = mdocument.querySelectorAll('pre code');
+        var blocks = mdocument.querySelectorAll('code[class^=lang-]');
         Array.prototype.forEach.call(blocks, mwindow.hljs.highlightBlock);
+        // Allow post-rendering actions.
+        var markdown_preview_rendered = new Event('markdown_preview_rendered');
+        window.dispatchEvent(markdown_preview_rendered);
     }
 
     this.closeMarkdownView = function(deleteSettings=false, closeView=true) {
@@ -182,8 +247,7 @@ extensions.markdown = {};
                                   { label: "Markdown: Generate markdown preview" });
             }
 
-            // TODO: Need a way to detect that a view has been resized!
-            //window.addEventListener("resize", this.onviewresize.bind(this));
+            window.addEventListener("resize", this.onviewresize.bind(this));
             this.onviewchanged();
         } catch (ex) {
             log.exception(ex);
@@ -199,12 +263,14 @@ extensions.markdown = {};
     }
 
     this.onviewresize = function(event) {
-        try {
-            if (this.panel.state == "open") {
-                this.repositionPopup();
+        if (typeof this.panel !== 'undefined') {
+            try {
+                if (this.panel.state == "open") {
+                    this.repositionPopup();
+                }
+            } catch (ex) {
+                log.exception(ex);
             }
-        } catch (ex) {
-            log.exception(ex);
         }
     }
 
@@ -226,7 +292,41 @@ extensions.markdown = {};
             log.exception(ex);
         }
     }
-
+    
+    /**
+     * Export button and menu items handler
+     * @param {Event} event
+     * @param {string} target ("file"|"clipboard"), if not set default or last used value will be used
+     */
+    this.onexport = function(event, target) {
+        if (!target) target = exportTarget;
+        exportTarget = target; // module global for rememberng last choice
+        this.onpreview();
+        var doExport = function() {
+            window.removeEventListener('markdown_preview_rendered', doExport, false);
+            var mdocument = markdown_view.browser.contentDocument,
+                name = markdown_view.title,
+                html = exportDocument(mdocument, name);
+            markdown_view.close();
+            switch (target) {
+                case 'file':
+                    createHTMLFile(html, name);
+                    break;
+                case 'clipboard':
+                    copyToClipboard(html);
+                    ko.notifications.add(
+                        'Markdown as HTML is copied to clipboard.',
+                        ['markdown'],
+                        'markdown-viewer',
+                        { severity: Components.interfaces.koINotification.SEVERITY_INFO }
+                    );
+                    break;
+            }
+        };
+        window.addEventListener('markdown_preview_rendered', doExport, false);
+        event.stopPropagation();
+    }
+        
     this.onviewchanged = function(event) {
         try {
             var view = event && event.originalTarget || ko.views.manager.currentView;
