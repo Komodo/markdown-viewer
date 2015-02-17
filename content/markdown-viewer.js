@@ -21,53 +21,6 @@ extensions.markdown = {};
     // The onmodified update delay (in milliseconds).
     this.UPDATE_DELAY = 500;
 
-    function getXPosition(panel, editor) {
-        var x = editor.boxObject.width;
-        // The || case when the panel doesn't have a size - we'll guess and
-        // we'll recalculate it after the panel is shown.
-        return x - (panel.boxObject.width || 120) - 2;
-    }
-
-    this.openPopup = function(view) {
-        log.debug("openPopup");
-        if (!this.panel) {
-            this.panel = document.getElementById("extension_markdown_panel");
-            // Komodo 9 and above will set the type to "drag".
-            if (typeof(require) == "function") {
-                this.panel.setAttribute("type", "drag");
-            }
-        }
-
-        if (!view) {
-            view = ko.views.manager.currentView;
-        }
-        var editor = view.scintilla;
-        var x = getXPosition(this.panel, editor);
-        this.panel.openPopup(editor, null, x, 0);
-    }
-
-    this.hidePopup = function() {
-        if (!this.panel) {
-            return; // It's not been created yet.
-        }
-        log.debug("hidePopup");
-        this.panel.hidePopup();
-    }
-
-    this.repositionPopup = function(view) {
-        log.debug("repositionPopup");
-        if (!view) {
-            view = ko.views.manager.currentView;
-        }
-        if (!view) {
-            view = ko.views.manager.currentView;
-        }
-        var editor = view.scintilla;
-        var x = getXPosition(this.panel, editor);
-        var editorBox = editor.boxObject;
-        this.panel.moveTo(editorBox.screenX + x, editorBox.screenY);
-    }
-
     this.getSettings = function(view) {
         if (!("_extension_markdown" in view)) {
             view._extension_markdown = {
@@ -142,7 +95,6 @@ extensions.markdown = {};
     }
 
     this.closeMarkdownView = function(deleteSettings=false, closeView=true) {
-        this.hidePopup();
         // Closing the markdown browser preview and remove event listeners.
         if (markdown_view) {
             log.debug("removing event listeners for 'editor_text_modified' and 'view_closed'");
@@ -249,7 +201,6 @@ extensions.markdown = {};
             if (!settings.previewing) {
                 log.debug("onviewchanged: it's a markdown file with no preview");
                 this.closeMarkdownView();
-                extensions.markdown.openPopup(view);
             } else if (!markdown_view) {
                 log.debug("onviewchanged: re-display the markdown preview");
                 this.createPreview(view);
@@ -311,8 +262,79 @@ extensions.markdown = {};
         }
     }
 
+    this.controller = {
+        do_cmd_markdownPreview: function(e)
+        {
+            extensions.markdown.onpreview(e);
+        },
+
+        is_cmd_markdownPreview_enabled: function()
+        {
+            return ko.views.manager.currentView.language == "Markdown";
+        },
+
+        do_cmd_markdownPreviewVertical: function(e)
+        {
+            extensions.markdown.onpreview(e, 'vertical');
+        },
+
+        is_cmd_markdownPreviewVertical_enabled: function()
+        {
+            return ko.views.manager.currentView.language == "Markdown";
+        },
+
+        do_cmd_markdownPreviewHorizontal: function(e)
+        {
+            extensions.markdown.onpreview(e, 'horizontal');
+        },
+
+        is_cmd_markdownPreviewHorizontal_enabled: function()
+        {
+            return ko.views.manager.currentView.language == "Markdown";
+        },
+
+        /**
+         * Check whether command is supported
+         *
+         * @param   {String} command
+         *
+         * @returns {Bool}
+         */
+        supportsCommand: function(command)
+        {
+            return ("do_" + command) in this;
+        },
+
+        /**
+         * Check whether command is enabled
+         *
+         * @param   {String} command
+         *
+         * @returns {Bool}
+         */
+        isCommandEnabled: function(command)
+        {
+            var method = "is_" + command + "_enabled";
+            return (method in this) ?
+                    this["is_" + command + "_enabled"]() : true;
+        },
+
+        /**
+         * Execute command
+         *
+         * @param   {String} command
+         *
+         * @returns {Mixed}
+         */
+        doCommand: function(command)
+        {
+            return this["do_" + command]();
+        }
+    };
+
 }).apply(extensions.markdown);
 
 // Event listeners:
 //window.addEventListener("load", extensions.markdown.onload.bind(extensions.markdown));
 window.addEventListener("komodo-ui-started", extensions.markdown.onkomodostartup.bind(extensions.markdown));
+window.controllers.appendController(extensions.markdown.controller);

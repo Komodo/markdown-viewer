@@ -2,37 +2,68 @@
 
 <!DOCTYPE overlay SYSTEM "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
-<?xml-stylesheet href="chrome://markdown-viewer/skin/markdown-viewer.css" type="text/css"?>
+<?xml-stylesheet href="less://markdown-viewer/skin/markdown-viewer.less" type="text/css"?>
 
 <overlay id="markdown_viewer_overlay" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
     <script src="chrome://markdown-viewer/content/markdown-viewer.js" />
 
-    <popupset id="extensionPopupSet">
-        <!-- The type="drag" attribute is set to stop the popup from stealing the focus. -->
-        <panel id="extension_markdown_panel"
-               noautofocus="true"
-               noautohide="true"
-               ignorekeys="true"
-               level="floating">
-            <vbox>
-                <hbox>
-                    <button id="extension_markdown_button"
-                            type="menu-button"
-                            label="Preview"
-                            oncommand="extensions.markdown.onpreview(event);">
-                        <menupopup>
-                            <menuitem label="Under-over split view"
-                                      type="radio"
-                                      name="extension_markdown_radio_splitview"
-                                      oncommand="extensions.markdown.onpreview(event, 'vertical');" />
-                            <menuitem label="Side-by-side split view"
-                                      type="radio"
-                                      name="extension_markdown_radio_splitview"
-                                      oncommand="extensions.markdown.onpreview(event, 'horizontal');" />
-                        </menupopup>
-                    </button>
-                </hbox>
-            </vbox>
-        </panel>
-    </popupset>
+    <toolbar id="toolsToolbar">
+        <toolbaritem id="toolsToolbarGroup">
+            <toolbarbutton id="buttonMarkdownPreview"
+                           tooltiptext="Preview Markdown"
+                           type="menu-button"
+                           persist="buttonstyle"
+                           buttonstyle="pictures"
+                           observes="cmd_markdownPreview"
+                           class="icon-markdown"
+                           label="Markdown Preview"
+                           insertafter="buttonBrowserPreview">
+                <menupopup id="buttonMarkdownPreviewPopup">
+                    <menuitem label="Under-over split view"
+                              type="radio"
+                              name="extension_markdown_radio_splitview"
+                              observes="cmd_markdownPreviewVertical"/>
+                    <menuitem label="Side-by-side split view"
+                              type="radio"
+                              name="extension_markdown_radio_splitview"
+                              observes="cmd_markdownPreviewHorizontal" />
+                </menupopup>
+            </toolbarbutton>
+        </toolbaritem>
+    </toolbar>
+
+    <menupopup id="popup_view">
+        <menuitem id="menuMarkdownPreview"
+                  label="Markdown Preview"
+                  observes="cmd_markdownPreview"
+                  insertafter="menu_reloadBrowserPreview"/>
+    </menupopup>
+
+    <commandset id="allcommands">
+        <commandset
+            id="cmdset_markdown_previewability_changed"
+            oncommandupdate="ko.commands.updateCommandset(this)"
+            commandupdater="true"
+            events="current_view_changed"
+            >
+            <command
+                id="cmd_markdownPreview" key="key_cmd_markdownPreview"
+                oncommand="ko.commands.doCommand('cmd_markdownPreview', event)"
+                disabled="true"
+                desc="Markdown Preview"/>
+
+            <command
+                id="cmd_markdownPreviewVertical" key="key_cmd_markdownPreviewVertical"
+                oncommand="ko.commands.doCommand('cmd_markdownPreviewVertical', event)"
+                disabled="true"
+                desc="Markdown Preview Vertical"/>
+
+            <command
+                id="cmd_markdownPreviewHorizontal" key="key_cmd_markdownPreviewHorizontal"
+                oncommand="ko.commands.doCommand('cmd_markdownPreviewHorizontal', event)"
+                disabled="true"
+                desc="Markdown Preview Horizontal"/>
+        </commandset>
+    </commandset>
+
 </overlay>
