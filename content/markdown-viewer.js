@@ -22,10 +22,21 @@ extensions.markdown = {};
     this.UPDATE_DELAY = 500;
 
     this.getSettings = function(view) {
+        var result = {
+            "previewing": false,  // currently previewing
+        };
+        
+        if (!view) {
+            var vm = ko.views.manager;
+            var view = vm.currentView.getAttribute("type") == "editor" ? vm.currentView :
+                                                                         vm.topView.otherView.currentView;
+            if (view.getAttribute("type") != "editor") {
+                return result;  // Ignore non-editor views.
+            }
+        }
+        
         if (!("_extension_markdown" in view)) {
-            view._extension_markdown = {
-                "previewing": false,  // currently previewing
-            };
+            view._extension_markdown = result;
         }
         return view._extension_markdown;
     }
@@ -33,6 +44,7 @@ extensions.markdown = {};
     this.createPreview = function(view, orient) {
         // Watch for editor changes, to update the markdown view.
         log.debug("adding event listeners for 'editor_text_modified' and 'view_closed'");
+        window.removeEventListener("view_closed", this.handlers.onviewclosed); // remove existing listener, if any
         window.addEventListener("editor_text_modified", this.handlers.onmodified);
         window.addEventListener("view_closed", this.handlers.onviewclosed);
 
@@ -99,7 +111,7 @@ extensions.markdown = {};
         if (markdown_view) {
             log.debug("removing event listeners for 'editor_text_modified' and 'view_closed'");
             window.removeEventListener("editor_text_modified", this.handlers.onmodified);
-            window.removeEventListener("view_closed", this.handlers.onviewclosed);
+            window.removeEventListener("current_view_changed", this.handlers.onviewchanged);
             if (deleteSettings) {
                 delete markdown_view._extension_markdown;
             }
@@ -163,8 +175,10 @@ extensions.markdown = {};
     this.onpreview = function(event, orient) {
         try {
             log.debug("onpreview");
-            var view = ko.views.manager.currentView;
-            if (view.getAttribute("type") != "editor") {
+            var vm = ko.views.manager;
+            var view = vm.currentView.getAttribute("type") == "editor" ? vm.currentView :
+                                                                         vm.topView.otherView.currentView;
+            if (!view || view.getAttribute("type") != "editor") {
                 log.debug("not an editor view");
                 return;  // Ignore non-editor views.
             }
@@ -172,6 +186,13 @@ extensions.markdown = {};
             if (!settings.previewing) {
                 this.createPreview(view, orient);
             } else {
+                // Rotate the view if its already being previewed
+                var topView = ko.views.manager.topView;
+                if (orient && ! topView.currentView.collapsed && ! topView.otherView.collapsed) {
+                    if (topView.getAttribute("orient") != orient) {
+                        ko.commands.doCommandAsync("cmd_rotateSplitter");
+                    }
+                }
                 this.updatePreview(view);
             }
         } catch (ex) {
@@ -265,32 +286,48 @@ extensions.markdown = {};
     this.controller = {
         do_cmd_markdownPreview: function(e)
         {
-            extensions.markdown.onpreview(e);
+            if (this._ignoreNext) {
+                this._ignoreNext = false;
+                return;
+            }
+            
+            var settings = extensions.markdown.getSettings();
+            if (!settings.previewing) 
+                extensions.markdown.onpreview(e);
+            else
+                extensions.markdown.closeMarkdownView();
         },
 
         is_cmd_markdownPreview_enabled: function()
         {
-            return ko.views.manager.currentView.language == "Markdown";
+            var view = ko.views.manager.currentView;
+            return view.language == "Markdown" ||
+                    (view.getAttribute("type") == "browser" &&
+                     view.getAttribute("sub-type") == "markdown");
         },
 
         do_cmd_markdownPreviewVertical: function(e)
         {
+            this._ignoreNext = true;
+            setTimeout(function() { this._ignoreNext = false; }.bind(this), 100);
             extensions.markdown.onpreview(e, 'vertical');
         },
 
         is_cmd_markdownPreviewVertical_enabled: function()
         {
-            return ko.views.manager.currentView.language == "Markdown";
+            return this.is_cmd_markdownPreview_enabled();
         },
 
         do_cmd_markdownPreviewHorizontal: function(e)
         {
+            this._ignoreNext = true;
+            setTimeout(function() { this._ignoreNext = false; }.bind(this), 100);
             extensions.markdown.onpreview(e, 'horizontal');
         },
 
         is_cmd_markdownPreviewHorizontal_enabled: function()
         {
-            return ko.views.manager.currentView.language == "Markdown";
+            return this.is_cmd_markdownPreview_enabled();
         },
 
         /**
