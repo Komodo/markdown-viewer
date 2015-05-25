@@ -301,7 +301,7 @@ extensions.markdown = {};
         is_cmd_markdownPreview_enabled: function()
         {
             var view = ko.views.manager.currentView;
-            return view.language == "Markdown" ||
+            return (view.language && view.language == "Markdown") ||
                     (view.getAttribute("type") == "browser" &&
                      view.getAttribute("sub-type") == "markdown");
         },
