@@ -28,7 +28,7 @@ extensions.markdown = {};
         
         if (!view) {
             var vm = ko.views.manager;
-            var view = vm.currentView.getAttribute("type") == "editor" ? vm.currentView :
+            view = vm.currentView.getAttribute("type") == "editor" ? vm.currentView :
                                                                          vm.topView.otherView.currentView;
             if (view.getAttribute("type") != "editor") {
                 return result;  // Ignore non-editor views.
