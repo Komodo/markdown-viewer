@@ -99,7 +99,8 @@ extensions.markdown = {};
         // Generate and load markdown html into the browser view.
         var mwrap = mdocument.getElementById("wrap");
         var text = view.scimoz.text;
-        mwrap.innerHTML = mwindow.marked(text);
+        var marked = require("contrib/marked");
+        mwrap.innerHTML = marked(text);
 
         // Highlight the code sections.
         var blocks = mdocument.querySelectorAll('pre code');
