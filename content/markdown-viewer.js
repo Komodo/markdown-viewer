@@ -65,6 +65,8 @@ extensions.markdown = {};
 
         // Change the tab label:
         markdown_view.title = "Markdown - " + view.title;
+        
+        markdown_view.browser.contentWindow.alert = function(message) { log.warn(message); }
 
         this.updatePreview(view);
     }
