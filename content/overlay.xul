@@ -7,29 +7,6 @@
 <overlay id="markdown_viewer_overlay" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
     <script src="chrome://markdown-viewer/content/markdown-viewer.js" />
 
-    <toolbaritem id="toolsPreviewGroup">
-        <toolbarbutton id="buttonMarkdownPreview"
-                       tooltiptext="Preview Markdown"
-                       type="menu-button"
-                       persist="buttonstyle"
-                       buttonstyle="pictures"
-                       observes="cmd_markdownPreview"
-                       class="markdown-icon"
-                       label="Markdown Preview"
-                       insertafter="buttonBrowserPreview">
-            <menupopup id="buttonMarkdownPreviewPopup">
-                <menuitem label="Under-over split view"
-                          type="radio"
-                          name="extension_markdown_radio_splitview"
-                          observes="cmd_markdownPreviewVertical"/>
-                <menuitem label="Side-by-side split view"
-                          type="radio"
-                          name="extension_markdown_radio_splitview"
-                          observes="cmd_markdownPreviewHorizontal" />
-            </menupopup>
-        </toolbarbutton>
-    </toolbaritem>
-
     <menupopup id="popup_view">
         <menuitem id="menuMarkdownPreview"
                   label="Markdown Preview"

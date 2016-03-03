@@ -70,7 +70,7 @@ extensions.markdown = {};
 
         this.updatePreview(view);
     }
-
+    
     this.updatePreview = function(view) {
         updatepreview_timeout_id = null;
         var mdocument = markdown_view.browser.contentDocument;
@@ -148,6 +148,28 @@ extensions.markdown = {};
                 commands.register("markdown-preview", this.onpreview.bind(this),
                                   { label: "Markdown: Generate markdown preview" });
             }
+            
+            require("ko/dynamic-button").register("Preview Markdown", {
+                command: "cmd_markdownPreview",
+                icon: "markdown",
+                group: "preview",
+                menuitems: [
+                    {
+                        label: "Under-over split view",
+                        type: "radio",
+                        command: "cmd_markdownPreviewVertical",
+                        observes: "cmd_markdownPreviewVertical",
+                        name: "extension_markdown_radio_splitview"
+                    },
+                    {
+                        label: "Side-by-side split view",
+                        type: "radio",
+                        command: "cmd_markdownPreviewHorizontal",
+                        observes: "cmd_markdownPreviewHorizontal",
+                        name: "extension_markdown_radio_splitview"
+                    }
+                ]
+            });
 
             // TODO: Need a way to detect that a view has been resized!
             //window.addEventListener("resize", this.onviewresize.bind(this));
