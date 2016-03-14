@@ -150,6 +150,7 @@ extensions.markdown = {};
             }
             
             require("ko/dynamic-button").register("Preview Markdown", {
+                events: ["current_view_changed", "current_view_language_changed", "workspace_restored"],
                 command: "cmd_markdownPreview",
                 icon: "markdown",
                 group: "preview",
