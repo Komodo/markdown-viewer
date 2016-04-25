@@ -153,7 +153,9 @@ extensions.markdown = {};
                 events: ["current_view_changed", "current_view_language_changed", "workspace_restored"],
                 command: "cmd_markdownPreview",
                 icon: "markdown",
+                ordinal: 200,
                 group: "preview",
+                groupOrdinal: 200,
                 menuitems: [
                     {
                         label: "Under-over split view",
